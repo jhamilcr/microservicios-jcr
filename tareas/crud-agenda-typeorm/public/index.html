@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda con TypeORM</title>
+</head>
+<body>
+  <h1>Agenda</h1>
+
+  <form id="contactForm">
+    <input type="text" id="nombres" placeholder="Nombres" required><br>
+    <input type="text" id="apellidos" placeholder="Apellidos" required><br>
+    <input type="date" id="fecha_nacimiento" required><br>
+    <input type="text" id="direccion" placeholder="Dirección"><br>
+    <input type="text" id="celular" placeholder="Celular"><br>
+    <input type="email" id="correo" placeholder="Correo"><br>
+    <button type="submit">Agregar</button>
+  </form>
+
+  <h2>Contactos</h2>
+  <ul id="contactList"></ul>
+
+  <script>
+    const apiUrl = '/contactos';
+    const form = document.getElementById('contactForm');
+    const list = document.getElementById('contactList');
+
+    let editingId = null;
+
+    function cargarContactos() {
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          list.innerHTML = '';
+          data.forEach(contacto => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <strong>${contacto.nombres} ${contacto.apellidos}</strong> - ${contacto.celular} - ${contacto.correo}
+              <button onclick="editarContacto(${contacto.id})">Editar</button>
+              <button onclick="eliminarContacto(${contacto.id})">Eliminar</button>
+            `;
+            list.appendChild(li);
+          });
+        });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const contacto = {
+        nombres: document.getElementById('nombres').value,
+        apellidos: document.getElementById('apellidos').value,
+        fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+        direccion: document.getElementById('direccion').value,
+        celular: document.getElementById('celular').value,
+        correo: document.getElementById('correo').value,
+      };
+
+      if (editingId) {
+        fetch(`${apiUrl}/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contacto)
+        }).then(() => {
+          form.reset();
+          editingId = null;
+          form.querySelector('button').innerText = 'Agregar';
+          cargarContactos();
+        });
+      } else {
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contacto)
+        }).then(() => {
+          form.reset();
+          cargarContactos();
+        });
+      }
+    });
+
+    function eliminarContacto(id) {
+      fetch(`${apiUrl}/${id}`, { method: 'DELETE' })
+        .then(() => cargarContactos());
+    }
+
+    function editarContacto(id) {
+      fetch(`${apiUrl}/${id}`)
+        .then(res => res.json())
+        .then(contacto => {
+          document.getElementById('nombres').value = contacto.nombres;
+          document.getElementById('apellidos').value = contacto.apellidos;
+          document.getElementById('fecha_nacimiento').value = contacto.fecha_nacimiento;
+          document.getElementById('direccion').value = contacto.direccion;
+          document.getElementById('celular').value = contacto.celular;
+          document.getElementById('correo').value = contacto.correo;
+          editingId = id;
+          form.querySelector('button').innerText = 'Actualizar';
+        });
+    }
+
+    cargarContactos();
+  </script>
+</body>
+</html>
