@@ -1,0 +1,13 @@
+<%- include('layout', { }) %>
+<div class="card">
+  <p>
+    <strong>Operación:</strong>
+    <%= op==='sum' ? 'Suma' : op==='sub' ? 'Resta' : op==='mul' ?
+    'Multiplicación' : 'División' %>
+  </p>
+  <p><strong>a:</strong> <%= a %></p>
+  <p><strong>b:</strong> <%= b %></p>
+  <p><strong>Resultado:</strong> <%= resultado %></p>
+
+  <p><a href="/">← Volver</a></p>
+</div>
