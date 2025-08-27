@@ -1,0 +1,52 @@
+<%- include('partials/header') %>
+
+<div class="card">
+  <h2>Agregar usuario</h2>
+  <form method="POST" action="/users">
+    <div class="row">
+      <div style="flex:1;">
+        <label for="name">Nombre</label>
+        <input id="name" name="name" type="text" required>
+      </div>
+      <div style="flex:1;">
+        <label for="email">Correo</label>
+        <input id="email" name="email" type="email" required>
+      </div>
+      <div>
+        <button type="submit">Guardar</button>
+      </div>
+    </div>
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+  </form>
+</div>
+
+<div class="card" style="margin-top:1rem;">
+  <h2>Usuarios registrados</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Nombre</th><th>Correo</th><th>Fecha de registro</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (users.length === 0) { %>
+        <tr><td colspan="5">Sin usuarios.</td></tr>
+      <% } %>
+      <% users.forEach(u => { %>
+        <tr>
+          <td><%= u.id %></td>
+          <td><%= u.name %></td>
+          <td><%= u.email %></td>
+          <td><%= new Date(u.created_at).toLocaleString('es-ES') %></td>
+          <td>
+            <form class="inline" method="POST" action="/users/<%= u.id %>/delete" onsubmit="return confirm('¿Eliminar usuario <%= u.name %>?');">
+              <button type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/footer') %>
