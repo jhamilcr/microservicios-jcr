@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda de Contactos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      max-width: 400px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    input:focus {
+      border-color: #007BFF;
+      outline: none;
+      box-shadow: 0 0 4px rgba(0,123,255,0.3);
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 800px;
+      margin: 20px auto;
+    }
+
+    li {
+      background: white;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .contact-info {
+      flex: 1 1 520px;
+      min-width: 260px;
+    }
+
+    .name {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 6px 16px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .meta span {
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-edit, .btn-delete {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: opacity .2s ease;
+      font-weight: 600;
+    }
+
+    .btn-edit {
+      background-color: #28a745;
+      color: #fff;
+    }
+
+    .btn-delete {
+      background-color: #dc3545;
+      color: #fff;
+    }
+
+    .btn-edit:hover, .btn-delete:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 600px) {
+      li {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .actions {
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Agenda</h1>
+
+  <form id="contactForm">
+    <input type="text" id="nombres" placeholder="Nombres" required><br>
+    <input type="text" id="apellidos" placeholder="Apellidos" required><br>
+    <input type="date" id="fecha_nacimiento" required><br>
+    <input type="text" id="direccion" placeholder="Dirección"><br>
+    <input type="text" id="celular" placeholder="Celular"><br>
+    <input type="email" id="correo" placeholder="Correo"><br>
+    <button type="submit">Agregar</button>
+  </form>
+
+  <h2>Contactos</h2>
+  <ul id="contactList"></ul>
+
+  <script>
+    const apiUrl = 'http://localhost:3000/api/agenda';
+    const form = document.getElementById('contactForm');
+    const list = document.getElementById('contactList');
+
+    let editingId = null;
+
+    function cargarContactos() {
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          list.innerHTML = '';
+          data.forEach(contacto => {
+            const li = document.createElement('li');
+
+            const id = contacto._id?.$oid || contacto._id;
+
+            const fecha = contacto.fecha_nacimiento
+              ? new Date(contacto.fecha_nacimiento).toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: '2-digit' })
+              : '—';
+
+            li.innerHTML = `
+              <div class="contact-info">
+                <div class="name">${contacto.nombres} ${contacto.apellidos}</div>
+                <div class="meta">
+                  <span><strong>Fecha de nacimiento:</strong> ${fecha}</span>
+                  <span><strong>Dirección:</strong> ${contacto.direccion ?? '—'}</span>
+                  <span><strong>Celular:</strong> ${contacto.celular ?? '—'}</span>
+                  <span><strong>Correo:</strong> ${contacto.correo ?? '—'}</span>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn-edit" onclick="editarContacto('${id}')">Editar</button>
+                <button class="btn-delete" onclick="eliminarContacto('${id}')">Eliminar</button>
+              </div>
+            `;
+            list.appendChild(li);
+          });
+        });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const contacto = {
+        nombres: document.getElementById('nombres').value,
+        apellidos: document.getElementById('apellidos').value,
+        fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+        direccion: document.getElementById('direccion').value,
+        celular: document.getElementById('celular').value,
+        correo: document.getElementById('correo').value,
+      };
+
+      if (editingId) {
+        fetch(`${apiUrl}/${editingId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contacto)
+        }).then(() => {
+          form.reset();
+          editingId = null;
+          form.querySelector('button').innerText = 'Agregar';
+          cargarContactos();
+        });
+      } else {
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contacto)
+        }).then(() => {
+          form.reset();
+          cargarContactos();
+        });
+      }
+    });
+
+    function eliminarContacto(id) {
+      fetch(`${apiUrl}/${id}`, { method: 'DELETE' })
+        .then(() => cargarContactos());
+    }
+
+    function editarContacto(id) {
+      fetch(`${apiUrl}/${id}`)
+        .then(res => res.json())
+        .then(contacto => {
+          document.getElementById('nombres').value = contacto.nombres;
+          document.getElementById('apellidos').value = contacto.apellidos;
+
+          const fechaRaw = contacto.fecha_nacimiento;
+          document.getElementById('fecha_nacimiento').value =
+            fechaRaw ? new Date(fechaRaw).toISOString().slice(0, 10) : '';
+
+          document.getElementById('direccion').value = contacto.direccion ?? '';
+          document.getElementById('celular').value = contacto.celular ?? '';
+          document.getElementById('correo').value = contacto.correo ?? '';
+
+          editingId = id;
+          form.querySelector('button').innerText = 'Actualizar';
+        });
+    }
+
+    cargarContactos();
+  </script>
+</body>
+</html>
