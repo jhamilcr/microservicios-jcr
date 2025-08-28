@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+
+<div class="card">
+  <h2>Editar tarea</h2>
+  <form method="POST" action="/tasks/<%= task._id %>?_method=PUT">
+    <label for="title">Título</label>
+    <input id="title" name="title" type="text" value="<%= task.title %>" required>
+
+    <label for="description" style="margin-top:.5rem;">Descripción</label>
+    <textarea id="description" name="description" rows="4"><%= task.description || '' %></textarea>
+
+    <label for="status" style="margin-top:.5rem;">Estado</label>
+    <select id="status" name="status">
+      <option value="pendiente"   <%= task.status==='pendiente' ? 'selected' : '' %>>pendiente</option>
+      <option value="en_progreso" <%= task.status==='en_progreso' ? 'selected' : '' %>>en_progreso</option>
+      <option value="completado"  <%= task.status==='completado' ? 'selected' : '' %>>completado</option>
+    </select>
+
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+
+    <div style="margin-top:1rem;" class="actions">
+      <button type="submit">Actualizar</button>
+      <a class="button" href="/">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

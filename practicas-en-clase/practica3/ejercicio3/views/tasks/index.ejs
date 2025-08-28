@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+
+<div class="card">
+  <a class="button" href="/tasks/new">+ Nueva tarea</a>
+</div>
+
+<div class="card">
+  <h2>Tareas</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Creación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (tasks.length === 0) { %>
+      <tr>
+        <td colspan="5">No hay tareas.</td>
+      </tr>
+      <% } %> <% tasks.forEach(t => { %>
+      <tr>
+        <td><strong><%= t.title %></strong></td>
+        <td>
+          <pre style="white-space: pre-wrap; margin: 0">
+<%= t.description || '' %></pre
+          >
+        </td>
+        <td><%= t.status %></td>
+        <td><%= new Date(t.createdAt).toLocaleString('es-ES') %></td>
+        <td class="actions">
+          <a class="button" href="/tasks/<%= t._id %>/edit">Editar</a>
+          <form
+            class="inline"
+            method="POST"
+            action="/tasks/<%= t._id %>?_method=DELETE"
+            onsubmit="return confirm('¿Eliminar esta tarea?');"
+          >
+            <button class="button" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

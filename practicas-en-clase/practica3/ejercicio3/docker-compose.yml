@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    container_name: tasks-app
+    environment:
+      PORT: 8080
+      MONGO_URI: mongodb://root:secret@mongo:27017/tasksdb?authSource=admin
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - mongo_net 
+
+networks:
+  mongo_net:
+    external: true
+    name: mongodb_default 
