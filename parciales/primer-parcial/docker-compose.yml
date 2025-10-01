@@ -1,0 +1,31 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: secret
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - red
+
+  api:
+    build:
+      context: .
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      - mongodb
+    ports:
+      - "3000:3000"
+    networks:
+      - red
+volumes:
+  mongo_data:
+
+networks:
+  red:
