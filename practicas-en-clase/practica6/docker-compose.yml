@@ -1,0 +1,51 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # UI de administración
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - practica6
+
+  producer:
+    build:
+      context: ./producer
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      QUEUE_NAME: ${QUEUE_NAME:-email_queue}
+      PORT: 3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "3006:3000"
+    networks:
+      - practica6
+    restart: on-failure
+
+  consumer:
+    build:
+      context: ./consumer
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      QUEUE_NAME: ${QUEUE_NAME:-email_queue}
+      PORT: 3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "3005:3000"
+    networks:
+      - practica6
+    restart: on-failure
+
+networks:
+  practica6:
