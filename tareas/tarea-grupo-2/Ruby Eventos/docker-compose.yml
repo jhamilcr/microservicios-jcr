@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    ports:
+      - "4567:4567"
+    environment:
+      - DB_HOST=mongodb
+      - DB_NAME=eventos_db
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

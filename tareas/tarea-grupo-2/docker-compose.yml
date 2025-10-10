@@ -1,0 +1,142 @@
+version: "3.9"
+
+networks:
+  backend:
+  proxy:
+
+volumes:
+  auth_mongo_data:
+  eventos_mongo_data:
+  purchases_pg_data:
+
+services:
+  # ---------- Reverse Proxy ----------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: tarea-2-gateway
+    depends_on:
+      - auth
+      - purchase_service
+      - eventos_api
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - proxy
+      - backend
+    restart: unless-stopped
+
+  # ---------- Auth Service (Node + Mongo) ----------
+  auth:
+    build: ./auth-service
+    container_name: tarea-2-auth-service
+    env_file:
+      - ./auth-service/.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - auth-mongo
+    networks:
+      - backend
+    restart: unless-stopped
+
+  auth-mongo:
+    image: mongo:7
+    container_name: tarea-2-auth-mongo
+    environment:
+      MONGO_INITDB_DATABASE: authdb
+    volumes:
+      - auth_mongo_data:/data/db
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # Panel Mongo para AUTH
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: tarea-2-mongo-express
+    environment:
+      ME_CONFIG_MONGODB_SERVER: auth-mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - auth-mongo
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ---------- Compras (Spring Boot + Postgres + RabbitMQ) ----------
+  purchases_db:
+    image: postgres:15
+    container_name: tarea-2-purchases_db
+    environment:
+      POSTGRES_DB: purchasesdb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - purchases_pg_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: tarea-2-rabbitmq
+    ports:
+      - "15672:15672"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  purchase_service:
+    build: ./compra_service
+    container_name: tarea-2-purchase_service
+    depends_on:
+      - purchases_db
+      - rabbitmq
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://purchases_db:5432/purchasesdb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
+      RABBITMQ_HOST: rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ---------- Eventos (Ruby + Mongo) ----------
+  eventos_api:
+    build: ./Ruby Eventos
+    container_name: tarea-2-eventos_api
+    environment:
+      DB_HOST: eventos-mongo
+      DB_NAME: eventos_db
+    depends_on:
+      - eventos-mongo
+    networks:
+      - backend
+    restart: unless-stopped
+
+  eventos-mongo:
+    image: mongo:6
+    container_name: tarea-2-eventos-mongo
+    volumes:
+      - eventos_mongo_data:/data/db
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ---------- Notificaciones (Node worker) ----------
+  notificaciones:
+    build: ./notificaciones
+    container_name: tarea-2-notifications
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped

@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: purchases_db
+    restart: always
+    environment:
+      POSTGRES_DB: purchasesdb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - purchases_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672" 
+    networks:
+      - backend
+
+  purchase-service:
+    build: .
+    container_name: purchase_service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/purchasesdb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8083:8083"
+    networks:
+      - backend
+
+volumes:
+  purchases_data:
+
+networks:
+  backend:

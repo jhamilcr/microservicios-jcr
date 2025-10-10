@@ -1,0 +1,19 @@
+server:
+  port: 8083
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/purchasesdb
+    username: user
+    password: pass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+app:
+  rabbitmq:
+    queue: notificaciones_queue
+  events-service-url: http://localhost:4567/events
