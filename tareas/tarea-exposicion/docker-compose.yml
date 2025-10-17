@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    container_name: alumnos_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alumnos_development
+    ports: ["5433:5432"]
+    volumes: ["db_data:/var/lib/postgresql/data"]
+
+  web:
+    build: .
+    container_name: alumnos_web
+    environment:
+      RAILS_ENV: development
+      DB_HOST: db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: alumnos_development
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    command: bash -lc "bundle exec rails server -b 0.0.0.0 -p 3000"
+
+volumes:
+  db_data:
