@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: rbql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER} -p${MYSQL_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    container_name: rbql_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      RACK_ENV: ${RACK_ENV}
+      APP_PORT: ${APP_PORT}
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - ./app/src:/usr/src/app/src
+      - ./app/Gemfile:/usr/src/app/Gemfile
+      - ./app/puma.rb:/usr/src/app/puma.rb
+      - ./app/config.ru:/usr/src/app/config.ru
+    command: ["bundle", "exec", "puma", "-C", "puma.rb"]
+
+  adminer:
+    image: adminer
+    container_name: rbql_adminer
+    restart: always
+    ports:
+      - "8084:8080"
+
+volumes:
+  db_data:

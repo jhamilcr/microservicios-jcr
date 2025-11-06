@@ -1,0 +1,4 @@
+-- USE appdb;
+-- INSERT INTO items (name, description, price) VALUES
+-- ('Notebook', 'A5 lined notebook', 4.50),
+-- ('Pen', 'Black gel pen', 1.20);
